@@ -5,6 +5,8 @@ from app.models import (
     FogDevice, LightIntensity, AirTemperature,
     AirHumidity, AirPressure, SoilMoisture
 )
+from flask_login import login_required, current_user
+from flask import abort
 
 api = Blueprint('api', __name__)
 
@@ -96,4 +98,28 @@ def device_heartbeat():
             return jsonify({'message': '心跳包更新成功'}), 200
         return jsonify({'error': '设备不存在'}), 404
     except Exception as e:
-        return jsonify({'error': str(e)}), 400 
+        return jsonify({'error': str(e)}), 400
+
+@api.route('/device/<int:device_id>/current-data')
+@login_required
+def get_device_current_data(device_id):
+    device = FogDevice.query.get_or_404(device_id)
+    
+    # 确保用户只能访问自己的设备数据
+    if device.user_id != current_user.user_id:
+        abort(403)
+    
+    # 获取最新的传感器数据
+    latest_soil = SoilMoisture.query.filter_by(fog_device_id=device_id).order_by(SoilMoisture.measured_at.desc()).first()
+    latest_light = LightIntensity.query.filter_by(fog_device_id=device_id).order_by(LightIntensity.measured_at.desc()).first()
+    latest_temp = AirTemperature.query.filter_by(fog_device_id=device_id).order_by(AirTemperature.measured_at.desc()).first()
+    latest_humidity = AirHumidity.query.filter_by(fog_device_id=device_id).order_by(AirHumidity.measured_at.desc()).first()
+    latest_pressure = AirPressure.query.filter_by(fog_device_id=device_id).order_by(AirPressure.measured_at.desc()).first()
+    
+    return jsonify({
+        'soil_moisture': latest_soil.moisture_value if latest_soil else 0,
+        'light': latest_light.light_value if latest_light else 0,
+        'temperature': latest_temp.temperature_value if latest_temp else 0,
+        'humidity': latest_humidity.humidity_value if latest_humidity else 0,
+        'pressure': latest_pressure.pressure_value if latest_pressure else 0
+    }) 

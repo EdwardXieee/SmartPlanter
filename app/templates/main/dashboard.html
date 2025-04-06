@@ -1,101 +1,167 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>仪表盘 - 智能花盆系统</title>
-    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="#">智能花盆系统</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.logout') }}">
-                            <i class="fas fa-sign-out-alt"></i> 退出登录
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="container mt-4">
-        <div class="row mb-4">
-            <div class="col">
-                <h2>我的花盆</h2>
-            </div>
-            <div class="col-auto">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
-                    <i class="fas fa-plus"></i> 添加花盆
-                </button>
-            </div>
-        </div>
-
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            {% for device in fog_devices %}
-            <div class="col">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ device.fog_device_name }}</h5>
-                        <p class="card-text">
-                            状态：
-                            {% if device.status == 'online' %}
-                            <span class="badge bg-success">在线</span>
-                            {% else %}
-                            <span class="badge bg-secondary">离线</span>
-                            {% endif %}
-                        </p>
-                        <p class="card-text">
-                            <small class="text-muted">添加时间：{{ device.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
-                        </p>
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">设备看板</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- 基本信息 -->
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">基本信息</h5>
+                                    <p><strong>设备名称：</strong> <span id="device-name">{{ device.fog_device_name }}</span></p>
+                                    <p><strong>添加时间：</strong> <span id="device-date">{{ device.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span></p>
+                                    <p><strong>状态：</strong> 
+                                        {% if device.status == 'online' %}
+                                        <span class="badge bg-success">在线</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">离线</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 实时数据 -->
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">实时数据</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="metric-card">
+                                                <i class="fas fa-temperature-high"></i>
+                                                <h6>空气温度</h6>
+                                                <p id="air-temp">{{ current_data.temperature.temperature_value if current_data.temperature else '暂无数据' }}°C</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="metric-card">
+                                                <i class="fas fa-tint"></i>
+                                                <h6>土壤湿度</h6>
+                                                <p id="soil-moisture">{{ current_data.soil_moisture.moisture_value if current_data.soil_moisture else '暂无数据' }}%</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mt-3">
+                                            <div class="metric-card">
+                                                <i class="fas fa-sun"></i>
+                                                <h6>光照强度</h6>
+                                                <p id="light-intensity">{{ current_data.light.light_value if current_data.light else '暂无数据' }} lux</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mt-3">
+                                            <div class="metric-card">
+                                                <i class="fas fa-cloud"></i>
+                                                <h6>空气湿度</h6>
+                                                <p id="air-humidity">{{ current_data.humidity.humidity_value if current_data.humidity else '暂无数据' }}%</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 历史数据图表 -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">历史数据</h5>
+                                    <canvas id="historyChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            {% else %}
-            <div class="col-12">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> 您还没有添加任何花盆设备
-                </div>
-            </div>
-            {% endfor %}
         </div>
     </div>
+</div>
 
-    <!-- 添加设备模态框 -->
-    <div class="modal fade" id="addDeviceModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">添加新花盆</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form>
-                        <div class="mb-3">
-                            <label for="deviceName" class="form-label">设备名称</label>
-                            <input type="text" class="form-control" id="deviceName" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="deviceId" class="form-label">设备ID</label>
-                            <input type="text" class="form-control" id="deviceId" required>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-primary" onclick="alert('该功能尚未实现')">添加</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- 引入 Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化图表
+    const ctx = document.getElementById('historyChart').getContext('2d');
+    const historyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ history_labels | safe }},
+            datasets: [{
+                label: '空气温度 (°C)',
+                data: {{ history_temp | safe }},
+                borderColor: 'rgb(255, 99, 132)',
+                tension: 0.1
+            }, {
+                label: '土壤湿度 (%)',
+                data: {{ history_moisture | safe }},
+                borderColor: 'rgb(54, 162, 235)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 
-    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-</body>
-</html> 
+    // 实时数据更新
+    function updateData() {
+        fetch(`/api/device/${deviceId}/current-data`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('air-temp').textContent = `${data.temperature}°C`;
+                document.getElementById('soil-moisture').textContent = `${data.soil_moisture}%`;
+                document.getElementById('light-intensity').textContent = `${data.light} lux`;
+                document.getElementById('air-humidity').textContent = `${data.humidity}%`;
+            });
+    }
+
+    // 每30秒更新一次数据
+    setInterval(updateData, 30000);
+});
+</script>
+
+<style>
+.metric-card {
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.metric-card i {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #0d6efd;
+}
+
+.metric-card h6 {
+    margin-bottom: 5px;
+    color: #6c757d;
+}
+
+.metric-card p {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+    color: #212529;
+}
+</style>
+{% endblock %} 

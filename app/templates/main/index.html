@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>我的花盆</h2>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
+                <i class="fas fa-plus"></i> 添加花盆
+            </button>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for device in fog_devices %}
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ device.fog_device_name }}</h5>
+                    <p class="card-text">
+                        状态：
+                        {% if device.status == 'online' %}
+                        <span class="badge bg-success">在线</span>
+                        {% else %}
+                        <span class="badge bg-secondary">离线</span>
+                        {% endif %}
+                    </p>
+                    <p class="card-text">
+                        <small class="text-muted">添加时间：{{ device.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                    </p>
+                    <div class="mt-3">
+                        <a href="{{ url_for('main.device_dashboard', device_id=device.fog_device_id) }}" 
+                           class="btn btn-primary w-100">
+                            <i class="fas fa-chart-line"></i> 查看详情
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 您还没有添加任何花盆设备
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 添加设备模态框 -->
+<div class="modal fade" id="addDeviceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加新花盆</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addDeviceForm">
+                    <div class="mb-3">
+                        <label for="deviceName" class="form-label">设备名称</label>
+                        <input type="text" class="form-control" id="deviceName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="deviceId" class="form-label">设备ID</label>
+                        <input type="text" class="form-control" id="deviceId" required>
+                        <div class="form-text">请输入设备背面的唯一标识码</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addDevice()">添加</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addDevice() {
+    const deviceName = document.getElementById('deviceName').value;
+    const deviceId = document.getElementById('deviceId').value;
+    
+    fetch('/api/devices', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: deviceName,
+            device_id: deviceId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        alert('添加设备失败，请重试');
+    });
+}
+</script>
+{% endblock %} 
