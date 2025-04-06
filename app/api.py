@@ -7,8 +7,90 @@ from app.models import (
 )
 from flask_login import login_required, current_user
 from flask import abort
+import requests
+import os
+import cv2
+import numpy as np
+from werkzeug.utils import secure_filename
+import plantid
+from openai import OpenAI
 
 api = Blueprint('api', __name__)
+
+# Initialize plant identifier
+plant_identifier = plantid.PlantIdentifier()
+
+# Deepseek API configuration
+client = OpenAI(api_key="sk-76016bb06a4742729b53d09f91d7b756", base_url="https://api.deepseek.com")
+
+def get_plant_care_advice(plant_name, latin_name):
+    """Use Deepseek API to get plant care advice"""
+    prompt = f"""As a professional horticulturist, please provide detailed care instructions for {plant_name} (Latin name: {latin_name}).
+    Please include the following aspects:
+    1. Light Requirements
+    2. Watering Frequency and Method
+    3. Temperature and Humidity Requirements
+    4. Soil Selection
+    5. Fertilization Guidelines
+    6. Common Issues and Solutions
+    
+    Please use clear and concise language, focusing on key information. Do not use markdown formatting, output plain text only, no **, #, - or other symbols, just natural paragraphs and line breaks."""
+    
+    try:
+        response = client.chat.completions.create(model="deepseek-chat",messages=[
+            {"role": "user", "content": prompt}
+            ], stream=False)
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Unable to get care advice: {str(e)}"
+
+@api.route('/identify_plant', methods=['POST'])
+@login_required
+def identify_plant():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image found in upload'}), 400
+        
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+        
+    try:
+        # Save uploaded image to temp file
+        temp_path = os.path.join('/tmp', secure_filename(file.filename))
+        file.save(temp_path)
+        
+        # Read image
+        image = cv2.imread(temp_path)
+        if image is None:
+            return jsonify({'error': 'Unable to read image'}), 400
+            
+        # Call plant identification
+        outputs = plant_identifier.identify(image, topk=5)
+        
+        # Delete temp file
+        os.remove(temp_path)
+        
+        if outputs['status'] != 0:
+            return jsonify({'error': 'Unable to identify the plant'}), 400
+            
+        # Get best match result
+        best_match = outputs['results'][0]
+        chinese_name = best_match['chinese_name']
+        latin_name = best_match['latin_name']
+        probability = best_match['probability']
+        
+        # Get care advice
+        care_advice = get_plant_care_advice(chinese_name, latin_name)
+        
+        return jsonify({
+            'chinese_name': chinese_name,
+            'latin_name': latin_name,
+            'confidence': probability,
+            'care_advice': care_advice
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Identification failed: {str(e)}'}), 500
 
 @api.route('/light', methods=['POST'])
 def record_light():
@@ -21,7 +103,7 @@ def record_light():
         )
         db.session.add(light_data)
         db.session.commit()
-        return jsonify({'message': '光照数据记录成功'}), 200
+        return jsonify({'message': 'Light data recorded successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -36,7 +118,7 @@ def record_temperature():
         )
         db.session.add(temp_data)
         db.session.commit()
-        return jsonify({'message': '温度数据记录成功'}), 200
+        return jsonify({'message': 'Temperature data recorded successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -51,7 +133,7 @@ def record_humidity():
         )
         db.session.add(humidity_data)
         db.session.commit()
-        return jsonify({'message': '湿度数据记录成功'}), 200
+        return jsonify({'message': 'Humidity data recorded successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -66,7 +148,7 @@ def record_pressure():
         )
         db.session.add(pressure_data)
         db.session.commit()
-        return jsonify({'message': '气压数据记录成功'}), 200
+        return jsonify({'message': 'Pressure data recorded successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -81,7 +163,7 @@ def record_soil_moisture():
         )
         db.session.add(soil_data)
         db.session.commit()
-        return jsonify({'message': '土壤湿度数据记录成功'}), 200
+        return jsonify({'message': 'Soil moisture data recorded successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -95,8 +177,8 @@ def device_heartbeat():
             device.status = 'online'
             device.updated_at = datetime.utcnow()
             db.session.commit()
-            return jsonify({'message': '心跳包更新成功'}), 200
-        return jsonify({'error': '设备不存在'}), 404
+            return jsonify({'message': 'Heartbeat updated successfully'}), 200
+        return jsonify({'error': 'Device not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -105,11 +187,11 @@ def device_heartbeat():
 def get_device_current_data(device_id):
     device = FogDevice.query.get_or_404(device_id)
     
-    # 确保用户只能访问自己的设备数据
+    # Ensure user can only access their own device data
     if device.user_id != current_user.user_id:
         abort(403)
     
-    # 获取最新的传感器数据
+    # Get latest sensor data
     latest_soil = SoilMoisture.query.filter_by(fog_device_id=device_id).order_by(SoilMoisture.measured_at.desc()).first()
     latest_light = LightIntensity.query.filter_by(fog_device_id=device_id).order_by(LightIntensity.measured_at.desc()).first()
     latest_temp = AirTemperature.query.filter_by(fog_device_id=device_id).order_by(AirTemperature.measured_at.desc()).first()

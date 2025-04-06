@@ -6,60 +6,60 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">设备看板</h3>
+                    <h3 class="card-title">Device Dashboard</h3>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <!-- 基本信息 -->
+                        <!-- Basic Information -->
                         <div class="col-md-4">
                             <div class="card">
                                 <div class="card-body">
-                                    <h5 class="card-title">基本信息</h5>
-                                    <p><strong>设备名称：</strong> <span id="device-name">{{ device.fog_device_name }}</span></p>
-                                    <p><strong>添加时间：</strong> <span id="device-date">{{ device.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span></p>
-                                    <p><strong>状态：</strong> 
+                                    <h5 class="card-title">Basic Information</h5>
+                                    <p><strong>Device Name:</strong> <span id="device-name">{{ device.fog_device_name }}</span></p>
+                                    <p><strong>Added:</strong> <span id="device-date">{{ device.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span></p>
+                                    <p><strong>Status:</strong> 
                                         {% if device.status == 'online' %}
-                                        <span class="badge bg-success">在线</span>
+                                        <span class="badge bg-success">Online</span>
                                         {% else %}
-                                        <span class="badge bg-secondary">离线</span>
+                                        <span class="badge bg-secondary">Offline</span>
                                         {% endif %}
                                     </p>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- 实时数据 -->
+                        <!-- Real-time Data -->
                         <div class="col-md-8">
                             <div class="card">
                                 <div class="card-body">
-                                    <h5 class="card-title">实时数据</h5>
+                                    <h5 class="card-title">Real-time Data</h5>
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="metric-card">
                                                 <i class="fas fa-temperature-high"></i>
-                                                <h6>空气温度</h6>
-                                                <p id="air-temp">{{ current_data.temperature.temperature_value if current_data.temperature else '暂无数据' }}°C</p>
+                                                <h6>Air Temperature</h6>
+                                                <p id="air-temp">{{ current_data.temperature.temperature_value if current_data.temperature else 'No data' }}°C</p>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="metric-card">
                                                 <i class="fas fa-tint"></i>
-                                                <h6>土壤湿度</h6>
-                                                <p id="soil-moisture">{{ current_data.soil_moisture.moisture_value if current_data.soil_moisture else '暂无数据' }}%</p>
+                                                <h6>Soil Moisture</h6>
+                                                <p id="soil-moisture">{{ current_data.soil_moisture.moisture_value if current_data.soil_moisture else 'No data' }}%</p>
                                             </div>
                                         </div>
                                         <div class="col-md-6 mt-3">
                                             <div class="metric-card">
                                                 <i class="fas fa-sun"></i>
-                                                <h6>光照强度</h6>
-                                                <p id="light-intensity">{{ current_data.light.light_value if current_data.light else '暂无数据' }} lux</p>
+                                                <h6>Light Intensity</h6>
+                                                <p id="light-intensity">{{ current_data.light.light_value if current_data.light else 'No data' }} lux</p>
                                             </div>
                                         </div>
                                         <div class="col-md-6 mt-3">
                                             <div class="metric-card">
                                                 <i class="fas fa-cloud"></i>
-                                                <h6>空气湿度</h6>
-                                                <p id="air-humidity">{{ current_data.humidity.humidity_value if current_data.humidity else '暂无数据' }}%</p>
+                                                <h6>Air Humidity</h6>
+                                                <p id="air-humidity">{{ current_data.humidity.humidity_value if current_data.humidity else 'No data' }}%</p>
                                             </div>
                                         </div>
                                     </div>
@@ -68,12 +68,12 @@
                         </div>
                     </div>
                     
-                    <!-- 历史数据图表 -->
+                    <!-- Historical Data Chart -->
                     <div class="row mt-4">
                         <div class="col-md-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <h5 class="card-title">历史数据</h5>
+                                    <h5 class="card-title">Historical Data</h5>
                                     <canvas id="historyChart"></canvas>
                                 </div>
                             </div>
@@ -85,23 +85,25 @@
     </div>
 </div>
 
-<!-- 引入 Chart.js -->
+<!-- Include Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 初始化图表
+    const deviceId = {{ device.fog_device_id }};
+    
+    // Initialize chart
     const ctx = document.getElementById('historyChart').getContext('2d');
     const historyChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: {{ history_labels | safe }},
             datasets: [{
-                label: '空气温度 (°C)',
+                label: 'Air Temperature (°C)',
                 data: {{ history_temp | safe }},
                 borderColor: 'rgb(255, 99, 132)',
                 tension: 0.1
             }, {
-                label: '土壤湿度 (%)',
+                label: 'Soil Moisture (%)',
                 data: {{ history_moisture | safe }},
                 borderColor: 'rgb(54, 162, 235)',
                 tension: 0.1
@@ -121,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 实时数据更新
+    // Real-time data update
     function updateData() {
         fetch(`/api/device/${deviceId}/current-data`)
             .then(response => response.json())
@@ -133,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // 每30秒更新一次数据
+    // Update data every 30 seconds
     setInterval(updateData, 30000);
 });
 </script>

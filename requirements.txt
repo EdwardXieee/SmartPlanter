@@ -4,3 +4,8 @@ Flask-Login==0.6.3
 pymysql==1.1.0
 python-dotenv==1.0.1
 Werkzeug==3.0.1 
+opencv-python>=4.4
+pillow
+khandy>=0.1.8
+onnxruntime
+openai==1.70.0

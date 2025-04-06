@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 智能花盆系统</title>
+    <title>Login - Smart Planter System</title>
     <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
@@ -12,7 +12,7 @@
             <div class="col-md-6 col-lg-4">
                 <div class="card shadow">
                     <div class="card-body">
-                        <h3 class="text-center mb-4">智能花盆系统</h3>
+                        <h3 class="text-center mb-4">Smart Planter System</h3>
                         {% with messages = get_flashed_messages() %}
                             {% if messages %}
                                 {% for message in messages %}
@@ -22,16 +22,16 @@
                         {% endwith %}
                         <form method="POST">
                             <div class="mb-3">
-                                <label for="username" class="form-label">用户名</label>
+                                <label for="username" class="form-label">Username</label>
                                 <input type="text" class="form-control" id="username" name="username" required>
                             </div>
                             <div class="mb-3">
-                                <label for="password" class="form-label">密码</label>
+                                <label for="password" class="form-label">Password</label>
                                 <input type="password" class="form-control" id="password" name="password" required>
                             </div>
                             <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary">登录</button>
-                                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary">注册新账号</a>
+                                <button type="submit" class="btn btn-primary">Login</button>
+                                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary">Create Account</a>
                             </div>
                         </form>
                     </div>
