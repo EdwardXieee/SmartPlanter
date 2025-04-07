@@ -1,5 +1,5 @@
 from app import app
-from app.tasks import check_device_status
+from app.tasks import check_device_status, prediction_task
 import threading
 import time
 
@@ -13,6 +13,7 @@ if __name__ == '__main__':
     # 启动设备状态检查线程（守护线程）
     status_thread = threading.Thread(target=run_status_check, daemon=True)
     status_thread.start()
+    prediction_task.start()
     
     # 启动Flask应用
     app.run(host='0.0.0.0', port=5001, debug=True)
