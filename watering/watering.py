@@ -35,7 +35,7 @@ def train_watering_model(file_path='watering_needs.txt', model_path='model.pkl')
     print(f"Model saved to: {model_path}")
 
 # Predict whether watering is needed
-def predict_watering_needs(soil_moisture, light_intensity, ambient_temperature, humidity, model_path='model.pkl'):
+def predict_watering_needs(soil_moisture, light_intensity, ambient_temperature, humidity, model_path='watering/model.pkl'):
     rf_classifier = joblib.load(model_path)
     input_data = pd.DataFrame({
         'Soil_Moisture': [soil_moisture],
@@ -61,7 +61,10 @@ def predict_watering_needs(soil_moisture, light_intensity, ambient_temperature, 
     return prediction, interval
 
 if __name__ == '__main__':
-    train_watering_model()
+    # train_watering_model()
+    prediction, interval = predict_watering_needs(28, 1500, 60, 50)
+    print(f"Prediction: {prediction}")
+    print(f"Result: {'No watering needed' if prediction else 'Watering needed, add {:.2f} moisture units'.format(interval)}")
 
 """
 Example usage:

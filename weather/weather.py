@@ -54,7 +54,7 @@ def get_meteorological_data():
     return wind_speed, dew_point, visibility
 
 # Predict weather condition using local and METAR data
-def predict_weather(temperature, humidity, pressure, model_path='weather_model.joblib'):
+def predict_weather(temperature, humidity, pressure, model_path='weather/weather_model.joblib'):
     wind_speed, dew_point, visibility = get_meteorological_data()
     model = joblib.load(model_path)
 
@@ -64,7 +64,9 @@ def predict_weather(temperature, humidity, pressure, model_path='weather_model.j
     return prediction
 
 if __name__ == '__main__':
-    train_weather_model()
+    # train_weather_model()
+    predicted_class = predict_weather(8.2, 76, 100.69)
+    print(f"Predicted weather class: {predicted_class}")
 
 """
 Example usage:

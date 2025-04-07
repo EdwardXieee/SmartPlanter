@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 import os
 from dotenv import load_dotenv
+from config import Config
+from app.tasks import prediction_task
 
 # 加载环境变量
 load_dotenv()
@@ -29,5 +31,9 @@ from app.api import api as api_blueprint
 app.register_blueprint(auth_blueprint)
 app.register_blueprint(main_blueprint)
 app.register_blueprint(api_blueprint, url_prefix='/api')
+
+# Start prediction task when app starts
+with app.app_context():
+    prediction_task.start()
 
 from app import models 

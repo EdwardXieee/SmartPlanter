@@ -33,7 +33,7 @@ def train_health_model(data_path='plant_health_data.csv', model_path='health_mod
     print(f"XGBoost model saved to {model_path}")
 
 # Predict plant health status based on sensor input
-def predict_health(soil_moisture, ambient_temperature, soil_temperature, humidity, light_intensity, model_path='health_model.json'):
+def predict_health(soil_moisture, ambient_temperature, soil_temperature, humidity, light_intensity, model_path='health/health_model.json'):
     model = XGBClassifier()
     model.load_model(model_path)
 
@@ -42,7 +42,9 @@ def predict_health(soil_moisture, ambient_temperature, soil_temperature, humidit
     return prediction
 
 if __name__ == '__main__':
-    train_health_model()
+    # train_health_model()
+    result = predict_health(33.5, 26.3, 23.1, 69.6, 884.7)
+    print(f"Prediction label: {result}")
 
 """
 Example usage:

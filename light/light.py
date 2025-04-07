@@ -20,14 +20,16 @@ def train_light_model(data_path='light_train.csv', model_path='light_model.jobli
     print(f"Light prediction model saved to {model_path}")
 
 # Predict light intensity from soil moisture and temperature
-def predict_light(moisture, temperature, model_path='light_model.joblib'):
+def predict_light(moisture, temperature, model_path='light/light_model.joblib'):
     model = joblib.load(model_path)
     input_data = np.array([[moisture, temperature]])
     prediction = model.predict(input_data)[0]
     return prediction
 
 if __name__ == '__main__':
-    train_light_model()
+    # train_light_model()
+    light_value = predict_light(51, 28.6)
+    print(f"Predicted light intensity: {light_value:.2f} lux")
 
 """
 Example usage:

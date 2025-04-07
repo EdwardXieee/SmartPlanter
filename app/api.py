@@ -97,9 +97,11 @@ def identify_plant():
 def record_light():
     data = request.json
     try:
+        voltage = data['light_value'] * 5.0 / 1023.0
+        lux = 500.0 / (10.0 * (5.0 - voltage) / voltage)
         light_data = LightIntensity(
             fog_device_id=data['fog_device_id'],
-            light_value=data['light_value'],
+            light_value=lux,
             measured_at=datetime.fromisoformat(data['measured_at'])
         )
         db.session.add(light_data)
