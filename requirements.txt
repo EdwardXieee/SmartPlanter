@@ -9,3 +9,4 @@ pillow
 khandy>=0.1.8
 onnxruntime
 openai==1.70.0
+metar==1.11.0
