@@ -4,7 +4,7 @@ import threading
 import time
 
 def run_status_check():
-    with app.app_context():  # ✅ 加上上下文
+    with app.app_context():
         while True:
             check_device_status()
             time.sleep(30)  # 每30秒检查一次设备状态

@@ -12,6 +12,7 @@ import busio
 import RPi.GPIO as GPIO
 from adafruit_bme280 import basic as adafruit_bme280
 import adafruit_tcs34725
+import requests
 
 # =========================
 # 配置参数
@@ -95,9 +96,9 @@ def send_sensor_value(sensor_type: SensorType, edge_device_id: str, value):
     try:
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            print("✅ Successfully sent to cloud:", payload)
+            print("Successfully sent to cloud:", payload)
         else:
-            print("❌ Failed to send to cloud, status code:", response.status_code)
+            print("Failed to send to cloud, status code:", response.status_code)
     except Exception as e:
         print("❗ HTTP error:", e)
 
@@ -152,7 +153,7 @@ def send_light_data():
                 send_sensor_value(SensorType.LIGHT, edge_device_id, light_value)
                 print("Sent light value:", light_value)
             else:
-                print("⚠️ Missing data fields, skipping send.")
+                print("Missing data fields, skipping send.")
     except Exception as e:
         print("Read error:", e)
 
@@ -210,6 +211,35 @@ def send_soil_humidity_data():
         else:
             print(f"Soil Moisture = Estimating... ({len(moisture_window)}/6 readings collected)")
 
+def get_health_status():
+    """
+    Call the API endpoint to get the current plant health status.
+    """
+    try:
+        # 这里假设 fog_device_id 为 1，调整为实际的 ID
+        response = requests.get(f"{API_BASE_URL}/api/health_status/1")
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('plant_health_status', 'unknown')
+        else:
+            print("Failed to get health status, status code:", response.status_code)
+            return None
+    except Exception as e:
+        print("Error getting health status:", e)
+        return None
+
+def send_health_status():
+    """
+    Get health status and send it to micro:bit via serial.
+    """
+    status = get_health_status()
+    if status is not None:
+        # 格式化发送内容，比如 "H:healthy" 或 "H:unhealthy"
+        message = f"H:{status}\n"
+        ser.write(message.encode())
+        print("Sent health status to micro:bit:", message)
+    else:
+        print("Health status not available.")
 
 # =========================
 # 多线程执行函数
@@ -231,6 +261,13 @@ def environment_data_thread():
         send_soil_humidity_data()
         time.sleep(600)
 
+def health_status_thread():
+    """
+    Background thread: periodically get health status and send it.
+    """
+    while True:
+        send_health_status()
+        time.sleep(60)
 
 def time_sender_thread():
     """线程：监测分钟或日期变化，变化时发送时间和日期"""
@@ -246,7 +283,6 @@ def time_sender_thread():
             last_date = current_date
         time.sleep(1)
 
-
 def send_heartbeat():
     """发送心跳包到服务器"""
     while True:
@@ -255,11 +291,11 @@ def send_heartbeat():
                 "device_id": DEVICE_ID
             })
             if response.status_code == 200:
-                print("✅ 心跳包发送成功")
+                print("心跳包发送成功")
             else:
-                print("❌ 心跳包发送失败，状态码:", response.status_code)
+                print("心跳包发送失败，状态码:", response.status_code)
         except Exception as e:
-            print("❗ 心跳包发送错误:", e)
+            print("心跳包发送错误:", e)
         time.sleep(30)  # 每30秒发送一次心跳包
 
 
@@ -274,10 +310,12 @@ if __name__ == "__main__":
         env_thread = threading.Thread(target=environment_data_thread, daemon=True)
         time_thread = threading.Thread(target=time_sender_thread, daemon=True)
         heartbeat_thread = threading.Thread(target=send_heartbeat, daemon=True)
+        health_thread = threading.Thread(target=health_status_thread, daemon=True)
 
         light_thread.start()
         env_thread.start()
         time_thread.start()
+        heartbeat_thread.start()
         heartbeat_thread.start()
 
         # 主线程保持运行状态
