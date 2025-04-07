@@ -74,4 +74,37 @@ class SoilMoisture(db.Model):
     fog_device_id = db.Column(db.String(50), nullable=False)
     moisture_value = db.Column(db.Float, nullable=False)
     measured_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class PlantHealth(db.Model):
+    __tablename__ = 'plant_health'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    fog_device_id = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(50), default='healthy')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class PlantLightNeeded(db.Model):
+    __tablename__ = 'plant_light_needed'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    fog_device_id = db.Column(db.Integer, nullable=False)
+    light_needed = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class PlantWateringNeeded(db.Model):
+    __tablename__ = 'plant_watering_needed'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    fog_device_id = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.Integer, default=0)  # 0: need watering, 1: no need
+    water_needed = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class WeatherForecast(db.Model):
+    __tablename__ = 'weather_forcast'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    fog_device_id = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.Integer, default=0)  # 0, 1, 2: bigger number, worse weather
     created_at = db.Column(db.DateTime, default=datetime.utcnow) 

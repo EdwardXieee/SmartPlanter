@@ -3,7 +3,8 @@ from datetime import datetime
 from app import db
 from app.models import (
     FogDevice, LightIntensity, AirTemperature,
-    AirHumidity, AirPressure, SoilMoisture
+    AirHumidity, AirPressure, SoilMoisture,
+    PlantHealth, PlantLightNeeded, PlantWateringNeeded, WeatherForecast
 )
 from flask_login import login_required, current_user
 from flask import abort
@@ -198,10 +199,50 @@ def get_device_current_data(device_id):
     latest_humidity = AirHumidity.query.filter_by(fog_device_id=device_id).order_by(AirHumidity.measured_at.desc()).first()
     latest_pressure = AirPressure.query.filter_by(fog_device_id=device_id).order_by(AirPressure.measured_at.desc()).first()
     
+    # Get plant status data
+    plant_health = PlantHealth.query.filter_by(fog_device_id=device_id).order_by(PlantHealth.created_at.desc()).first()
+    light_needed = PlantLightNeeded.query.filter_by(fog_device_id=device_id).order_by(PlantLightNeeded.created_at.desc()).first()
+    watering_needed = PlantWateringNeeded.query.filter_by(fog_device_id=device_id).order_by(PlantWateringNeeded.created_at.desc()).first()
+    weather_forecast = WeatherForecast.query.filter_by(fog_device_id=device_id).order_by(WeatherForecast.created_at.desc()).first()
+    
+    # Calculate light status
+    light_status = "Normal"
+    if light_needed and latest_light:
+        light_difference_percentage = ((latest_light.light_value - light_needed.light_needed) / light_needed.light_needed) * 100
+        if light_difference_percentage < -15:
+            light_status = "Needs more light"
+        elif light_difference_percentage > 15:
+            light_status = "Needs less light"
+    
+    # Determine weather forecast message
+    weather_message = "Good weather"
+    if weather_forecast:
+        if weather_forecast.status == 1:
+            weather_message = "Consider bringing plant indoors"
+        elif weather_forecast.status == 2:
+            weather_message = "Strongly recommended to bring plant indoors"
+    
     return jsonify({
         'soil_moisture': latest_soil.moisture_value if latest_soil else 0,
         'light': latest_light.light_value if latest_light else 0,
         'temperature': latest_temp.temperature_value if latest_temp else 0,
         'humidity': latest_humidity.humidity_value if latest_humidity else 0,
-        'pressure': latest_pressure.pressure_value if latest_pressure else 0
+        'pressure': latest_pressure.pressure_value if latest_pressure else 0,
+        'plant_health': {
+            'status': plant_health.status if plant_health else 'healthy',
+            'message': "Monitor other metrics carefully" if plant_health and plant_health.status == 'unhealthy' else ""
+        },
+        'light_needed': {
+            'current': latest_light.light_value if latest_light else 0,
+            'needed': light_needed.light_needed if light_needed else 0,
+            'status': light_status
+        },
+        'watering': {
+            'needed': watering_needed.status == 0 if watering_needed else False,
+            'amount': watering_needed.water_needed if watering_needed else 0
+        },
+        'weather': {
+            'status': weather_forecast.status if weather_forecast else 0,
+            'message': weather_message
+        }
     }) 

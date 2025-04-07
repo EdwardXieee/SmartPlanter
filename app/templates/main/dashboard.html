@@ -34,32 +34,87 @@
                                 <div class="card-body">
                                     <h5 class="card-title">Real-time Data</h5>
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="metric-card">
                                                 <i class="fas fa-temperature-high"></i>
                                                 <h6>Air Temperature</h6>
                                                 <p id="air-temp">{{ current_data.temperature.temperature_value if current_data.temperature else 'No data' }}°C</p>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="metric-card">
                                                 <i class="fas fa-tint"></i>
                                                 <h6>Soil Moisture</h6>
                                                 <p id="soil-moisture">{{ current_data.soil_moisture.moisture_value if current_data.soil_moisture else 'No data' }}%</p>
                                             </div>
                                         </div>
-                                        <div class="col-md-6 mt-3">
+                                        <div class="col-md-4">
                                             <div class="metric-card">
                                                 <i class="fas fa-sun"></i>
                                                 <h6>Light Intensity</h6>
                                                 <p id="light-intensity">{{ current_data.light.light_value if current_data.light else 'No data' }} lux</p>
                                             </div>
                                         </div>
-                                        <div class="col-md-6 mt-3">
+                                        <div class="col-md-4 mt-3">
                                             <div class="metric-card">
                                                 <i class="fas fa-cloud"></i>
                                                 <h6>Air Humidity</h6>
                                                 <p id="air-humidity">{{ current_data.humidity.humidity_value if current_data.humidity else 'No data' }}%</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mt-3">
+                                            <div class="metric-card">
+                                                <i class="fas fa-compress-alt"></i>
+                                                <h6>Air Pressure</h6>
+                                                <p id="air-pressure">{{ current_data.pressure.pressure_value if current_data.pressure else 'No data' }} hPa</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Plant Status Section -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Plant Status</h5>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="status-card">
+                                                <h6>Plant Health</h6>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span id="plant-health-status" class="status-indicator"></span>
+                                                    <span id="plant-health-message" class="small"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="status-card">
+                                                <h6>Light Conditions</h6>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span id="light-status" class="status-text"></span>
+                                                    <span id="light-value" class="small"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="status-card">
+                                                <h6>Watering Needs</h6>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span id="watering-status" class="status-text"></span>
+                                                    <span id="watering-amount" class="small"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="status-card">
+                                                <h6>Weather Alert</h6>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span id="weather-status" class="status-text"></span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -74,6 +129,15 @@
                             <div class="card">
                                 <div class="card-body">
                                     <h5 class="card-title">Historical Data</h5>
+                                    <div class="chart-controls mb-3">
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-outline-primary active" data-chart="temperature">Temperature</button>
+                                            <button type="button" class="btn btn-outline-primary" data-chart="moisture">Soil Moisture</button>
+                                            <button type="button" class="btn btn-outline-primary" data-chart="humidity">Air Humidity</button>
+                                            <button type="button" class="btn btn-outline-primary" data-chart="pressure">Air Pressure</button>
+                                            <button type="button" class="btn btn-outline-primary" data-chart="light">Light Intensity</button>
+                                        </div>
+                                    </div>
                                     <canvas id="historyChart"></canvas>
                                 </div>
                             </div>
@@ -90,10 +154,12 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const deviceId = {{ device.fog_device_id }};
+    let currentChart = 'temperature';
+    let historyChart = null;
     
     // Initialize chart
     const ctx = document.getElementById('historyChart').getContext('2d');
-    const historyChart = new Chart(ctx, {
+    historyChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: {{ history_labels | safe }},
@@ -106,7 +172,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 label: 'Soil Moisture (%)',
                 data: {{ history_moisture | safe }},
                 borderColor: 'rgb(54, 162, 235)',
-                tension: 0.1
+                tension: 0.1,
+                hidden: true
+            }, {
+                label: 'Air Humidity (%)',
+                data: {{ history_humidity | safe }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                hidden: true
+            }, {
+                label: 'Air Pressure (hPa)',
+                data: {{ history_pressure | safe }},
+                borderColor: 'rgb(153, 102, 255)',
+                tension: 0.1,
+                hidden: true
+            }, {
+                label: 'Light Intensity (lux)',
+                data: {{ history_light | safe }},
+                borderColor: 'rgb(255, 159, 64)',
+                tension: 0.1,
+                hidden: true
             }]
         },
         options: {
@@ -117,11 +202,82 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: false
                 }
             }
         }
     });
+
+    // Chart controls
+    document.querySelectorAll('.chart-controls .btn').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('.chart-controls .btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            currentChart = this.getAttribute('data-chart');
+            
+            // Toggle dataset visibility
+            historyChart.data.datasets.forEach((dataset, index) => {
+                const shouldShow = dataset.label.toLowerCase().includes(currentChart);
+                historyChart.setDatasetVisibility(index, shouldShow);
+            });
+            
+            historyChart.update();
+        });
+    });
+
+    // Update plant status indicators
+    function updatePlantStatus(data) {
+        // Plant health
+        const healthElement = document.getElementById('plant-health-status');
+        const healthMessage = document.getElementById('plant-health-message');
+        
+        if (data.plant_health.status === 'healthy') {
+            healthElement.className = 'status-indicator healthy';
+            healthElement.textContent = 'Healthy';
+            healthMessage.textContent = '';
+        } else {
+            healthElement.className = 'status-indicator unhealthy';
+            healthElement.textContent = 'Unhealthy';
+            healthMessage.textContent = data.plant_health.message;
+        }
+        
+        // Light status
+        const lightStatus = document.getElementById('light-status');
+        const lightValue = document.getElementById('light-value');
+        
+        lightStatus.textContent = data.light_needed.status;
+        lightValue.textContent = `Current: ${data.light_needed.current} / Needed: ${data.light_needed.needed}`;
+        
+        if (data.light_needed.status !== "Normal") {
+            lightStatus.classList.add('warning');
+        } else {
+            lightStatus.classList.remove('warning');
+        }
+        
+        // Watering status
+        const wateringStatus = document.getElementById('watering-status');
+        const wateringAmount = document.getElementById('watering-amount');
+        
+        if (data.watering.needed) {
+            wateringStatus.textContent = 'Needs watering';
+            wateringStatus.classList.add('warning');
+            wateringAmount.textContent = `Amount: ${data.watering.amount}ml`;
+        } else {
+            wateringStatus.textContent = 'Watering OK';
+            wateringStatus.classList.remove('warning');
+            wateringAmount.textContent = '';
+        }
+        
+        // Weather status
+        const weatherStatus = document.getElementById('weather-status');
+        
+        weatherStatus.textContent = data.weather.message;
+        if (data.weather.status > 0) {
+            weatherStatus.classList.add('warning');
+        } else {
+            weatherStatus.classList.remove('warning');
+        }
+    }
 
     // Real-time data update
     function updateData() {
@@ -132,8 +288,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('soil-moisture').textContent = `${data.soil_moisture}%`;
                 document.getElementById('light-intensity').textContent = `${data.light} lux`;
                 document.getElementById('air-humidity').textContent = `${data.humidity}%`;
+                document.getElementById('air-pressure').textContent = `${data.pressure} hPa`;
+                
+                // Update plant status section
+                updatePlantStatus(data);
             });
     }
+
+    // Initial update
+    updateData();
 
     // Update data every 30 seconds
     setInterval(updateData, 30000);
@@ -164,6 +327,47 @@ document.addEventListener('DOMContentLoaded', function() {
     font-weight: bold;
     margin: 0;
     color: #212529;
+}
+
+.status-card {
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    margin-bottom: 15px;
+}
+
+.status-card h6 {
+    margin-bottom: 15px;
+    color: #495057;
+}
+
+.status-indicator {
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.status-indicator.healthy {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-indicator.unhealthy {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status-text {
+    font-weight: bold;
+}
+
+.status-text.warning {
+    color: #856404;
+}
+
+.chart-controls {
+    display: flex;
+    justify-content: center;
 }
 </style>
 {% endblock %} 
