@@ -146,7 +146,7 @@ def record_pressure():
     try:
         pressure_data = AirPressure(
             fog_device_id=data['fog_device_id'],
-            pressure_value=data['pressure_value'],
+            pressure_value=data['pressure_value'] / 10.0,
             measured_at=datetime.fromisoformat(data['measured_at'])
         )
         db.session.add(pressure_data)

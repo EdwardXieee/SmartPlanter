@@ -1,0 +1,1 @@
+select * from light_intensity;
