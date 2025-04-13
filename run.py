@@ -7,13 +7,13 @@ def run_status_check():
     with app.app_context():
         while True:
             check_device_status()
-            time.sleep(30)  # 每30秒检查一次设备状态
+            time.sleep(30)  # Check the equipment status every 30 seconds.
 
 if __name__ == '__main__':
-    # 启动设备状态检查线程（守护线程）
+    # Start the device status checking thread (daemon thread)
     status_thread = threading.Thread(target=run_status_check, daemon=True)
     status_thread.start()
     prediction_task.start()
     
-    # 启动Flask应用
+    # Start Flask application
     app.run(host='0.0.0.0', port=5001, debug=True)

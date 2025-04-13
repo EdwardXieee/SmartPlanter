@@ -13,8 +13,8 @@ def login():
         
         user = User.query.filter_by(username=username).first()
         
-        if not user or user.password != password:  # 直接比较密码
-            flash('用户名或密码错误')
+        if not user or user.password != password:
+            flash('Incorrect username or password')
             return redirect(url_for('auth.login'))
             
         login_user(user)
@@ -32,19 +32,19 @@ def register():
         user = User.query.filter_by(username=username).first()
         
         if user:
-            flash('用户名已存在')
+            flash('Username already exists')
             return redirect(url_for('auth.register'))
             
         new_user = User(
             username=username,
-            password=password,  # 直接存储密码
+            password=password,
             email=email
         )
         
         db.session.add(new_user)
         db.session.commit()
         
-        flash('注册成功！请登录')
+        flash('Registration successful! Please log in')
         return redirect(url_for('auth.login'))
         
     return render_template('auth/register.html')

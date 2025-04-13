@@ -4,24 +4,24 @@ from flask_login import LoginManager
 import os
 from dotenv import load_dotenv
 
-# 加载环境变量
+# Load environment variables
 load_dotenv()
 
-# 初始化Flask应用
+# Initialize the Flask application
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+pymysql://root:323993@localhost:3306/smart_planter')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# 初始化数据库
+# Initialize the database
 db = SQLAlchemy(app)
 
-# 初始化登录管理器
+# Initialize the login manager
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
 
-# 注册蓝图
+# Register blueprints
 from app.auth import auth as auth_blueprint
 from app.main import main as main_blueprint
 from app.api import api as api_blueprint

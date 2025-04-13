@@ -1,4 +1,4 @@
-// ------------------ 状态控制 ------------------
+// ------------------ State Management ------------------
 let state = "default"
 let STATE_DEFAULT = "default"
 let STATE_STOPWATCH_WAIT = "stopwatchWait"
@@ -10,21 +10,21 @@ let DATE = ""
 let TIME = 0
 let HEALTH_STAUS = 0 // 0: healthy, 1: unhealthy
 let lastLight = 0
-let lightSendInterval = 15000  // 30秒
+let lightSendInterval = 15000  // 30 seconds
 let stopwatchStart = 0
 let stateEnterTime = 0
 let phrases = ["Keep going!", "You can do it!", "Believe!", "Yes you can!"]
 
-// ------------------ 初始化硬件 ------------------
+// ------------------ Initialize Hardware ------------------
 let _4digit = grove.createDisplay(DigitalPin.P2, DigitalPin.P16)
 _4digit.point(true)
 _4digit.clear()
 
-// 初始化串口通信（通过 USB 数据线）
-// 将 TX 和 RX 分别映射到 USB_TX 和 USB_RX，波特率设置为 115200
+// Initialize serial communication (via USB data cable)
+// Map TX and RX to USB_TX and USB_RX, set baud rate to 115200
 serial.redirect(SerialPin.USB_TX, SerialPin.USB_RX, BaudRate.BaudRate115200)
 
-// ------------------ 辅助函数 ------------------
+// ------------------ Helper Function ------------------
 function enterState(newState: string) {
     state = newState
     stateEnterTime = control.millis()
@@ -54,10 +54,10 @@ function enterState(newState: string) {
     }
 }
 
-// ------------------ 串口接收处理 ------------------
+// ------------------ Serial Receive Handling ------------------
 serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
     let data = serial.readUntil(serial.delimiters(Delimiters.NewLine))
-    // 处理时间信息
+    // Handle time information
     if (data.substr(0, 2) == "T:") {
         let time = data.substr(2)
         let parts = time.split(":")
@@ -71,14 +71,14 @@ serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
             _4digit.point(true)
         }
     }
-    // 处理日期信息
+    // Handle date information
     else if (data.substr(0, 2) == "D:") {
         DATE = data.substr(2)
     }
-    // 处理健康状态信息
+    // Handle health status information
     else if (data.substr(0, 2) == "H:") {
         let healthStatus = data.substr(2).trim()
-        // 只有在默认状态下更新显示
+        // Update display only in default state
         if (healthStatus == "healthy") {
             HEALTH_STAUS = 0
         } else if (healthStatus == "unhealthy") {
@@ -88,7 +88,7 @@ serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
 })
 
 
-// ------------------ 串口发送光照强度 ------------------
+// ------------------ Serial Light Intensity Sender ------------------
 control.inBackground(function () {
     while (true) {
         basic.pause(lightSendInterval)
@@ -102,7 +102,7 @@ control.inBackground(function () {
     }
 })
 
-// ------------------ 状态超时检测 ------------------
+// ------------------ State Timeout Check ------------------
 basic.forever(function () {
     if (state == STATE_STOPWATCH_WAIT || state == STATE_SHAKE || state == STATE_DATE) {
         if (control.millis() - stateEnterTime > 10000) {
@@ -111,7 +111,7 @@ basic.forever(function () {
     }
 })
 
-// ------------------ 按钮 A 控制秒表 ------------------
+// ------------------ Button A Controls Stopwatch ------------------
 input.onButtonPressed(Button.A, function () {
     if (state == STATE_STOPWATCH_RUNNING) {
         let elapsed = (control.millis() - stopwatchStart) / 1000
@@ -135,7 +135,7 @@ input.onButtonPressed(Button.A, function () {
     }
 })
 
-// ------------------ 按钮 B 控制日期显示 ------------------
+// ------------------ Button B Controls Date Display ------------------
 input.onButtonPressed(Button.B, function () {
     if (state == STATE_STOPWATCH_RUNNING) {
         return
@@ -147,7 +147,7 @@ input.onButtonPressed(Button.B, function () {
     enterState(STATE_DEFAULT)
 })
 
-// ------------------ 摇一摇事件 ------------------
+// ------------------ Shake Gesture Event ------------------
 input.onGesture(Gesture.Shake, function () {
     if (state == STATE_STOPWATCH_RUNNING) {
         return
@@ -157,5 +157,5 @@ input.onGesture(Gesture.Shake, function () {
     }
 })
 
-// ------------------ 启动默认状态 ------------------
+// ------------------ Start with Default State ------------------
 enterState(STATE_DEFAULT)

@@ -10,8 +10,9 @@ from weather.weather import predict_weather
 
 def check_device_status():
     """
-    检查设备状态的定时任务
-    如果设备在60秒内没有发送心跳包，则将其状态设置为离线
+    Scheduled task to check device status.
+    If a device has not sent a heartbeat within 60 seconds,
+    its status will be set to offline.
     """
     timeout = datetime.utcnow() - timedelta(seconds=60)
     offline_devices = FogDevice.query.filter(
@@ -24,7 +25,7 @@ def check_device_status():
     
     if offline_devices:
         db.session.commit()
-        print(f"已将 {len(offline_devices)} 个设备标记为离线状态")
+        print(f"{len(offline_devices)} devices have been marked as offline.")
 
 class PredictionTask:
     def __init__(self, interval=300):  # Default interval: 5 minutes

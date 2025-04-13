@@ -188,7 +188,7 @@ def device_heartbeat():
 @api.route('/health_status/<int:device_id>', methods=['GET'])
 def health_status(device_id):
     device = FogDevice.query.get_or_404(device_id)
-    # 查询最新的 plant_health 记录
+    # Query the latest records of plant health.
     plant_health = PlantHealth.query.filter_by(fog_device_id=device_id).order_by(PlantHealth.created_at.desc()).first()
     health_status = plant_health.status if plant_health else 'healthy'
     return jsonify({'plant_health_status': health_status})
